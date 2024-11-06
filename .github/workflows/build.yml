@@ -1,0 +1,39 @@
+name: Build Kernel
+
+on:
+  push:
+    branches:
+      - wip/ally
+  pull_request:
+    branches:
+      - wip/ally
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: wip/ally
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev zstd
+
+      - name: Build kernel
+        run: |
+          make -j$(nproc) defconfig
+          make -j$(nproc)
+
+      - name: Package kernel
+        run: |
+          tar -I zstd -cvf kernel.tar.zst arch/x86/boot/bzImage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: kernel
+          path: kernel.tar.zst
